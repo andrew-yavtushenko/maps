@@ -77,11 +77,10 @@ const putBaseStationPoint = (point, pointId) => {
 }
 
 const putAuxPoint = (point, pointId) => {
-  console.info({[pointId]: point})
   var altText = ('text' in point) ? point.text : '';
   DG.marker([point.lat, point.long], {
     icon: getIconForAuxPoint(point.type),
-    customId: pointId,
+    pointId: pointId,
   }).addTo(myMap).bindTooltip(altText, {
     permanent: true,
     direction: 'right',
@@ -112,12 +111,28 @@ const getIconForAuxPoint = (type) => {
 }
 
 const onAuxPointClick = (e) => {
-  console.info(e.target)
   if (currentPointType === 'remove') {
-    e.target.remove()
+    e.target.remove();
+    removePointFromUrl(e.target.options.pointId);
   } else {
     e.target.toggleTooltip();
   }
+}
+
+const addPointToUrl = (point, pointId) => {
+  let input = location.hash.substr(1);
+  let wholeSettings = decodeURIComponent(input);
+  const points = JSON.parse(wholeSettings);
+  points[pointId] = point;
+  location.hash = encodeURIComponent(JSON.stringify(points));
+}
+
+const removePointFromUrl = (pointId) => {
+  let input = location.hash.substr(1);
+  let wholeSettings = decodeURIComponent(input);
+  const points = JSON.parse(wholeSettings);
+  delete points[pointId];
+  location.hash = encodeURIComponent(JSON.stringify(points));
 }
 
 const initAll = () => {
@@ -159,13 +174,16 @@ const initAll = () => {
       myMap.on('click', (e) => {
         const type = currentPointType === 'remove' ? 'human' : currentPointType;
         const lat = e.latlng.lat;
-        const long = e.latlng.lng;
-        putAuxPoint({
+        const lng = e.latlng.lng;
+        const pointId = `${type}_${lat}_${lng}`;
+        const point = {
           lat: lat,
           long: lng,
           text: `GPS: ${lat}, ${lng}`,
           type
-        }, `${type}_${lat}_${lng}`)
+        };
+        putAuxPoint(point, pointId)
+        addPointToUrl(point, pointId);
       });
 
       Object.keys(points).forEach((pointId) => {
