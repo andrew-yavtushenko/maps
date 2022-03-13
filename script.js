@@ -159,7 +159,7 @@ const initAll = () => {
       myMap.on('click', (e) => {
         const type = currentPointType === 'remove' ? 'human' : currentPointType;
         const lat = e.latlng.lat;
-        const long = e.latlng.lng,
+        const long = e.latlng.lng;
         putAuxPoint({
           lat: lat,
           long: lng,
