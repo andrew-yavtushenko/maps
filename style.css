@@ -1,0 +1,54 @@
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+#points__select {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+#points__select button {
+  font-size: 2em;
+  background:linear-gradient(180deg, rgba(239, 239, 239, 1) 0%, rgba(140, 140, 140, 1) 100%); ;
+  border-radius: 0.1em;
+  border: 1px solid #7b7b7b;
+}
+#points__select button:focus, 
+#points__select button:active {
+  background:#05cbfc;
+}
+#points__select li {
+  margin-top: 0.25em;
+}
+#points__select li.remove {
+  margin-top: 0.75em;
+}
+
+#mapid .leaflet-div-icon {
+  background: none;
+  border: none;
+  font-size: 32px;
+  text-align: center;
+  line-height: 32px;
+}
+
+#points__select[data-current-mode="human"] button#human {
+  background:#05cbfc;
+}
+#points__select[data-current-mode="car"] button#car {
+  background:#05cbfc;
+}
+#points__select[data-current-mode="tank"] button#tank {
+  background:#05cbfc;
+}
+#points__select[data-current-mode="remove"] button#remove {
+  background:#05cbfc;
+}
