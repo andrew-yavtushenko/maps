@@ -44,48 +44,47 @@ const initButtons = () => {
   })
 }
 const putBaseStationPoint = (point, pointId) => {
-  const color = ('color' in point) ? point.color : DEFAULT_BEAM_COLOR;
-  const altText = ('text' in point) ? point.text : '';
-  const wholetext = `<b>CellID: ${ pointId } <\/b><br>${ altText}<br> Координати ${point.lat}, ${point.long}`;
-  const distance = ('distance' in point) ? point.distance : DEFAULT_DISTANCE;
-
-  DG.marker([point.lat, point.long], {
-    icon: DG.icon({
-        iconUrl: 'signal.png',
-        iconSize: [64, 64],
+  const color = 'color' in point ? point.color : DEFAULT_BEAM_COLOR;
+  const altText = 'text' in point ? point.text : '';
+  const wholetext = `<b>CellID: ${pointId} <\/b><br>${altText}<br><br><b>GPS: ${point.lat},${point.long}</b>`;
+  const distance = 'distance' in point ? point.distance : DEFAULT_DISTANCE;
+  L.marker([point.lat, point.long], {
+    icon: L.icon({
+      iconUrl: 'signal.png',
+      iconSize: [64,64],
     })
-  }).addTo(myMap).bindTooltip(wholetext, {
-    permanent: true
-  }).openTooltip().addEventListener('click', (e) => {
-    e.target.toggleTooltip();
-  });
-  const poly = DG.polygon(getTriangleCoordinates(point.lat, point.long, point.angle, distance), {
-    color: color
-  }).addTo(myMap).bindPopup(wholetext);
-  poly.lat = point.lat
-  poly.long = point.long
-  poly.angle = point.angle
-  poly.distance = distance
-  poly.on('click', (e) => {
-    let new_distance = poly.distance + 250;
+  }).addTo(myMap)
+    .bindTooltip(wholetext, { permanent: true })
+    .openTooltip().addEventListener('click', (e) => {
+      e.target.toggleTooltip();
+    });
+  const poly = L.polygon(getTriangleCoordinates(point.lat, point.long, point.angle, distance), {
+    color: color,
+  }).addTo(myMap)
+    .bindPopup(wholetext);
+  poly.lat = point.lat;
+  poly.long = point.long;
+  poly.angle = point.angle;
+  poly.distance = distance;
+  poly.on('click', e => {
+    let new_distance = poly.distance + 250
     if (new_distance > 5000) {
-      new_distance = DEFAULT_DISTANCE;
+      new_distance = DEFAULT_DISTANCE
     }
-    poly.setLatLngs(getTriangleCoordinates(poly.lat, poly.long, poly.angle, new_distance));
+    poly.setLatLngs(getTriangleCoordinates(poly.lat, poly.long, poly.angle, new_distance))
     poly.distance = new_distance
   });
 }
 
 const putAuxPoint = (point, pointId) => {
-  var altText = ('text' in point) ? point.text : '';
-  DG.marker([point.lat, point.long], {
-    icon: getIconForAuxPoint(point.type),
-    pointId: pointId,
-  }).addTo(myMap).bindTooltip(altText, {
-    permanent: true,
-    direction: 'right',
-    offset: DG.point(16, 0)
-  }).openTooltip().addEventListener('click', onAuxPointClick);
+    var altText = ('text' in point) ? point.text : '';
+    L.marker([point.lat, point.long], {
+      icon: getIconForAuxPoint(point.type),
+      pointId: pointId
+    }).addTo(myMap)
+      .bindTooltip(altText, { permanent: true, direction: 'right', offset: L.point(16, 0) })
+      .openTooltip()
+      .addEventListener('click', onAuxPointClick);
 }
 
 const getIconForAuxPoint = (type) => {
@@ -135,6 +134,13 @@ const removePointFromUrl = (pointId) => {
   location.hash = encodeURIComponent(JSON.stringify(points));
 }
 
+const fitMapToBounds = (map) => {
+  const validPoints = Object.values(map._targets).filter(point => point.getLatLng && point.getLatLng());
+  const group = L.featureGroup(validPoints);
+  const bounds = group.getBounds();
+  map.fitBounds(bounds);
+}
+
 const initAll = () => {
     // Добавил возможность добавлять еще один тип обьектов - catch
     // О том что это отдельный тип говорит поле type
@@ -163,13 +169,38 @@ const initAll = () => {
     });
 
     const initMap = () => {
-      myMap = DG.map('mapid', {
-        center: [MAX_LAT, MAX_LONG],
-        zoom: 13,
-      });
-      DG.control.ruler().addTo(myMap);
-      DG.control.location().addTo(myMap);
-      DG.control.traffic().addTo(myMap);
+      const mainMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+      })
+      const wikimediaMap = L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}{r}.png', {
+        attribution: '<a href="https://wikimediafoundation.org/wiki/Maps_Terms_of_Use">Wikimedia</a>',
+        minZoom: 1,
+        maxZoom: 19,
+      })
+      const sateliteMap = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution:
+            'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        }
+      )
+      const topoMap = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        {
+          attribution:
+            'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
+        }
+      )
+
+      myMap = L.map('mapid', { layers: [mainMap] }).setView([MAX_LAT, MAX_LONG], 14)
+      L.control.locate().addTo(myMap)
+
+      const baseMaps = {
+        Main: mainMap,
+        Satelite: sateliteMap,
+        WikiMedia: wikimediaMap,
+        Topo: topoMap,
+      }
 
       myMap.on('click', (e) => {
         const type = currentPointType === 'remove' ? 'human' : currentPointType;
@@ -196,11 +227,11 @@ const initAll = () => {
         }
       })
 
-
+      fitMapToBounds(myMap)
     }
 
     // Icon
-    DG.then(initMap);
+    initMap();
     initButtons();
 }
 (initAll)();
